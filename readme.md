@@ -17,6 +17,67 @@ $ composer require larabra/laravel-media-library-input
 
 ## Usage
 
+Model
+
+```php
+// app\Model\News.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model as Model;
+use Larabra\LaravelMediaLibraryInput\Casts\MediaCastAttribute; // <---
+use Larabra\LaravelMediaLibraryInput\Models\MediableModel; // <---
+use Spatie\MediaLibrary\HasMedia;
+
+class News extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+    use MediableModel; // <--- create/add medias with form submit
+
+    // "cover" is a fake field, so add it as append and create its cast
+
+    protected $appends = [
+        'cover',
+    ];
+
+    protected $casts = [
+        'cover' => MediaCastAttribute::class,
+    ];
+    // ...
+}
+```
+
+Controller
+
+```php
+// app\Http\Controllers\NewsController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Repositories\NewsRepository;
+use Larabra\LaravelMediaLibraryInput\Http\Controllers\MediableController;
+
+class NewsController extends AppBaseController
+{
+    use MediableController; // <--- add controller methods to manager medias
+
+    /** @var  NewsRepository */
+    private $newsRepositorysitory;
+
+    public function __construct(NewsRepository $newsRepository)
+    {
+        $this->newsRepository = $newsRepository;
+    }
+```
+
+Views
+
+```blade
+{!! Form::label('cover', 'Capas:') !!}
+{!! Form::medias('cover', ['multiple' => true]) !!}
+```
+
+
 ## Change log
 
 Please see the [changelog](changelog.md) for more information on what has changed recently.
@@ -37,7 +98,7 @@ If you discover any security related issues, please email author email instead o
 
 ## Credits
 
-- [author name][link-author]
+- [Ennio Sousa][link-author]
 - [All Contributors][link-contributors]
 
 ## License
@@ -53,5 +114,5 @@ MIT. Please see the [license file](license.md) for more information.
 [link-downloads]: https://packagist.org/packages/larabra/laravel-media-library-input
 [link-travis]: https://travis-ci.org/larabra/laravel-media-library-input
 [link-styleci]: https://styleci.io/repos/12345678
-[link-author]: https://github.com/larabra
+[link-author]: https://github.com/enniosousa
 [link-contributors]: ../../contributors

@@ -2,11 +2,12 @@
 
 namespace Larabra\LaravelMediaLibraryInput;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
 use Collective\Html\FormFacade as Form;
-use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
+use Illuminate\Routing\PendingResourceRegistration;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Larabra\LaravelMediaLibraryInput\Routing\ResourceRegistrarProxy;
+use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 
 class LaravelMediaLibraryInputServiceProvider extends ServiceProvider
 {
@@ -17,12 +18,9 @@ class LaravelMediaLibraryInputServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
         $this->bootRouteResource();
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'larabra');
         $this->bootLaravelCollectiveMediaFormInput();
-
-        $this->bootMediaCollectionMacros();
 
 
         // $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'larabra');
@@ -37,82 +35,45 @@ class LaravelMediaLibraryInputServiceProvider extends ServiceProvider
 
     private function bootRouteResource()
     {
-        $this->app->bind(
-            \Illuminate\Routing\ResourceRegistrar::class,
-            \Larabra\LaravelMediaLibraryInput\Routing\ResourceRegistrar::class
-        );
+        $resourceRegistrar = $this->app->make(ResourceRegistrarProxy::class);
+        PendingResourceRegistration::macro('withMedias', function () use ($resourceRegistrar) {
+            [$name, $prefix] = $resourceRegistrar->getResourcePrefix($this->name);
+            $controller = $this->controller;
+            $options = $this->options;
+
+            Route::group(['prefix' => "$prefix"], function ($route) use ($name, $controller, $options, $resourceRegistrar) {
+                // create media
+                $route->post(
+                    $uri = $this->registrar->getResourceUri($name) . '/{' . $name . '}/medias',
+                    $action = $resourceRegistrar->getResourceAction($name, $controller, 'createMedia', $options),
+                );
+
+                // reorder media
+                $route->put(
+                    $uri = $this->registrar->getResourceUri($name) . '/{' . $name . '}/medias',
+                    $action = $resourceRegistrar->getResourceAction($name, $controller, 'reorderMedia', $options),
+                );
+
+                // reorder media
+                $route->delete(
+                    $uri = $this->registrar->getResourceUri($name) . '/{' . $name . '}/medias/{medias}',
+                    $action = $resourceRegistrar->getResourceAction($name, $controller, 'destroyMedia', $options),
+                );
+
+                // download media
+                $route->get(
+                    $uri = $this->registrar->getResourceUri($name) . '/{' . $name . '}/medias/{medias}/download',
+                    $action = $resourceRegistrar->getResourceAction($name, $controller, 'downloadMedia', $options),
+                );
+            });
+
+            return $this;
+        });
     }
 
     private function bootLaravelCollectiveMediaFormInput()
     {
         Form::component('medias', 'larabra::components.form.medias', ['name', 'attributes' => []]);
-    }
-
-    private function bootMediaCollectionMacros()
-    {
-        MediaCollection::macro('toMediaInput', function ($model) {
-            // $model = Form::getModel();
-            $controller = Route::getCurrentRoute()->getController()::class;
-            $token = csrf_token();
-
-            $medias = $this->sortBy(function ($media) {
-                return $media->order_column;
-            });
-
-            $collection = $this->collectionName ?? $this->formFieldName;
-
-            $data = [
-                'language' => 'pt-BR',
-                'theme' => 'fas',
-                'browseOnZoneClick' => true,
-                'overwriteInitial' => false, // if true, the medias will be replaced in editor
-                'append' => true, // add new medias to the end
-
-                'reorderUrl' => $model ? action([$controller, 'reorderMedia'], $model->getKey()) : null,
-                'reorderExtraData' => [
-                    '_token' => $token,
-                    '_method'=> 'PUT',
-                ],
-
-                'showUpload' => $model ? true : false, //
-                'uploadUrl' => $model ? action([$controller, 'createMedia'], $model->getKey()) : null, // If this is not set or null, then the upload button action will submit the form.
-                'uploadExtraData' => [
-                    '_token' => $token,
-                    'collection'=> $collection,
-                ],
-
-                //
-                // https://plugins.krajee.com/file-input/plugin-options#initialPreview
-                'initialPreview' => $medias
-                    ->map(function ($media) {
-                        return $media->getUrl();
-                    })
-                    ->toArray(),
-                //
-                // ref https://plugins.krajee.com/file-input/plugin-options#initialPreviewConfig
-                'initialPreviewConfig' => $medias
-                    ->map(function ($media) use ($model, $controller, $token, $collection) {
-                        return [
-                            'id' => $media->getKey(),
-                            'caption' => $media->name,
-                            'type'=> $media->getTypeFromExtension(),
-                            'filetype' => $media->mime_type,
-                            'size' => $media->size,
-                            'previewAsData'=> true,
-                            'url' => action([$controller, 'destroyMedia'], [$model->getKey(), $media->getKey()]),
-                            'extra' => [
-                                '_token' => $token,
-                                '_method'=> 'DELETE',
-                                'collection'=> $collection,
-                            ],
-                            'downloadUrl'=> action([$controller, 'downloadMedia'], [$model->getKey(), $media->getKey(), 'collection'=> $collection]),
-                        ];
-                    })
-                    ->toArray(),
-            ];
-
-            return $data;
-        });
     }
 
     /**
@@ -123,11 +84,6 @@ class LaravelMediaLibraryInputServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/laravel-media-library-input.php', 'laravel-media-library-input');
-
-        // Register the service the package provides.
-        $this->app->singleton('laravel-media-library-input', function ($app) {
-            return new LaravelMediaLibraryInput;
-        });
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Larabra\LaravelMediaLibraryInput\Http\Controllers;
 
 use App\Repositories\BaseRepository;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Laracasts\Flash\Flash;
@@ -10,8 +11,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 trait MediableController
 {
-    public function createMedia(Request $request, $id)
-    {
+    private function model($id){
         // get respository
         $repository = collect(get_object_vars($this))
             ->filter(function ($v, $k) {
@@ -32,6 +32,16 @@ trait MediableController
 
             return redirect()->route("$modelName.index");
         }
+
+        return [$model, $modelName];
+    }
+    public function createMedia(Request $request, $id)
+    {
+        $model = $this->model($id);
+        if($model instanceof RedirectResponse){
+            return $model;
+        }
+        [$model, $modelName] = $model;
 
         // validate the request
         $rules = [
@@ -76,21 +86,11 @@ trait MediableController
 
     public function destroyMedia(Request $request, $id, $media_id)
     {
-        $repository = collect(get_object_vars($this))
-            ->filter(function ($v, $k) {
-                return $v instanceof BaseRepository;
-            })
-            ->keys()
-            ->first();
-
-        $model = $this->{$repository}->find($id);
-
-        if (empty($model)) {
-            $modelName = app()->make($this->{$repository}->model())->getTable();
-            Flash::error(trans('messages.not_found', ['model' => trans("models/$modelName.singular")]));
-
-            return redirect()->route("$modelName.index");
+        $model = $this->model($id);
+        if($model instanceof RedirectResponse){
+            return $model;
         }
+        [$model, $modelName] = $model;
 
         $media = $model->getMedia($request->collection)->where('id', $media_id)->first();
 
@@ -101,21 +101,11 @@ trait MediableController
 
     public function reorderMedia(Request $request, $id)
     {
-        $repository = collect(get_object_vars($this))
-            ->filter(function ($v, $k) {
-                return $v instanceof BaseRepository;
-            })
-            ->keys()
-            ->first();
-
-        $model = $this->{$repository}->find($id);
-
-        if (empty($model)) {
-            $modelName = app()->make($this->{$repository}->model())->getTable();
-            Flash::error(trans('messages.not_found', ['model' => trans("models/$modelName.singular")]));
-
-            return redirect()->route("$modelName.index");
+        $model = $this->model($id);
+        if($model instanceof RedirectResponse){
+            return $model;
         }
+        [$model, $modelName] = $model;
 
         Media::setNewOrder($request->order);
 
@@ -124,21 +114,11 @@ trait MediableController
 
     public function downloadMedia(Request $request, $id, $media_id)
     {
-        $repository = collect(get_object_vars($this))
-            ->filter(function ($v, $k) {
-                return $v instanceof BaseRepository;
-            })
-            ->keys()
-            ->first();
-
-        $model = $this->{$repository}->find($id);
-
-        if (empty($model)) {
-            $modelName = app()->make($this->{$repository}->model())->getTable();
-            Flash::error(trans('messages.not_found', ['model' => trans("models/$modelName.singular")]));
-
-            return redirect()->route("$modelName.index");
+        $model = $this->model($id);
+        if($model instanceof RedirectResponse){
+            return $model;
         }
+        [$model, $modelName] = $model;
 
         $media = $model->getMedia($request->collection)->where('id', $media_id)->first();
 

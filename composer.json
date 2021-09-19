@@ -1,18 +1,27 @@
 {
     "name": "larabra/laravel-media-library-input",
-    "description": "",
+    "description": "HTML input for Spatie Media Library",
+    "keywords": [
+        "laravel", 
+        "spatie", 
+        "laravel-medialibrary", 
+        "media",
+        "images",
+        "downloads"
+    ],
     "license": "MIT",
     "authors": [
         {
-            "name": "author name",
-            "email": "author email",
-            "homepage": "author homepage"
+            "name": "Ennio Sousa",
+            "email": "ennio@enniosousa.com.br",
+            "homepage": "https://github.com/enniosousa"
         }
     ],
     "homepage": "https://github.com/larabra/laravel-media-library-input",
-    "keywords": ["Laravel", "LaravelMediaLibraryInput"],
     "require": {
-        "illuminate/support": "~7|~8"
+        "illuminate/support": "~7|~8",
+        "laravelcollective/html": "^6.2",
+        "spatie/laravel-medialibrary": "^9.7"
     },
     "require-dev": {
         "phpunit/phpunit": "~9.0",
@@ -32,10 +41,7 @@
         "laravel": {
             "providers": [
                 "Larabra\\LaravelMediaLibraryInput\\LaravelMediaLibraryInputServiceProvider"
-            ],
-            "aliases": {
-                "LaravelMediaLibraryInput": "Larabra\\LaravelMediaLibraryInput\\Facades\\LaravelMediaLibraryInput"
-            }
+            ]
         }
     }
 }

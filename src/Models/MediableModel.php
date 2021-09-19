@@ -4,7 +4,7 @@ namespace Larabra\LaravelMediaLibraryInput\Models;
 
 trait MediableModel
 {
-    public static function bootMediable()
+    public static function bootMediableModel()
     {
         static::saving(function ($model) {
             if (
