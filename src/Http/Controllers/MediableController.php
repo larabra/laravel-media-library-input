@@ -35,6 +35,14 @@ trait MediableController
 
         return [$model, $modelName];
     }
+
+    /**
+     * Add one or more media to model
+     *
+     * @param Request $request
+     * @param string|int|\Illuminate\Database\Eloquent\Model $id
+     * @return Response
+     */
     public function createMedia(Request $request, $id)
     {
         $model = $this->model($id);
@@ -70,20 +78,41 @@ trait MediableController
             //
         ;
 
-        // prepare response
-        $data = $model->getMedia($request->collection)->toMediaInput($model);
-
-        $initialPreviewConfig = Arr::where($data['initialPreviewConfig'], function ($value, $key) use ($media) {
-            return $value['id'] == $media->getKey();
-        });
-
+        $controller = get_class($this);
         return response()->json([
-            'initialPreviewConfig' => array_values($initialPreviewConfig),
             'initialPreview' => [$media->getUrl()],
+            'initialPreviewConfig' => [
+                [
+                    'id' => $media->getKey(),
+                    'caption' => $media->name,
+                    'type' => $media->getTypeFromExtension(),
+                    'filetype' => $media->mime_type,
+                    'size' => $media->size,
+                    'previewAsData' => true,
+                    'url' => action([$controller, 'destroyMedia'], [$model->getKey(), $media->getKey()]),
+                    'extra' => [
+                        '_token' => csrf_token(),
+                        '_method' => 'DELETE',
+                        'collection' => $request->collection,
+                    ],
+                    'downloadUrl' => action(
+                        [$controller, 'downloadMedia'], 
+                        [$model->getKey(), $media->getKey(), 'collection' => $request->collection]
+                    ),
+                ]
+            ],
             'append' => true
         ]);
     }
 
+    /**
+     * Delete a model media in collection
+     *
+     * @param Request $request
+     * @param string|int|\Illuminate\Database\Eloquent\Model $id
+     * @param string|int|\Illuminate\Database\Eloquent\Model $media_id
+     * @return Response
+     */
     public function destroyMedia(Request $request, $id, $media_id)
     {
         $model = $this->model($id);
@@ -99,6 +128,13 @@ trait MediableController
         return response()->noContent();
     }
 
+    /**
+     * Reorder all medias in collection
+     *
+     * @param Request $request
+     * @param string|int|\Illuminate\Database\Eloquent\Model $id
+     * @return Response
+     */
     public function reorderMedia(Request $request, $id)
     {
         $model = $this->model($id);
@@ -112,6 +148,14 @@ trait MediableController
         return response()->noContent();
     }
 
+    /**
+     * Force download of a media
+     *
+     * @param Request $request
+     * @param string|int|\Illuminate\Database\Eloquent\Model $id
+     * @param string|int|\Illuminate\Database\Eloquent\Model $media_id
+     * @return Response
+     */
     public function downloadMedia(Request $request, $id, $media_id)
     {
         $model = $this->model($id);
