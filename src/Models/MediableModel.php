@@ -2,6 +2,8 @@
 
 namespace Larabra\LaravelMediaLibraryInput\Models;
 
+use Illuminate\Support\Arr;
+
 trait MediableModel
 {
     public static function bootMediableModel()
@@ -22,12 +24,14 @@ trait MediableModel
                 return;
             }
 
-            foreach ($files as $collection => $media) {
-                $model
-                    ->addMedia($media) //starting method
-                    ->preservingOriginal() //middle method
-                    ->toMediaCollection($collection) //finishing method
-                ;
+            foreach ($files as $collection => $medias) {
+                foreach (Arr::wrap($medias) as $media) {
+                    $model
+                        ->addMedia($media) //starting method
+                        ->preservingOriginal() //middle method
+                        ->toMediaCollection($collection) //finishing method
+                    ;
+                }
             }
         };
         static::created($mediaCallback);

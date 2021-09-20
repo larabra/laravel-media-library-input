@@ -67,11 +67,17 @@
 
     $input_id = $attributes['id'] ?? 'medias_' . Str::random(10);
     $attributes['id'] = $input_id;
+
+    $inputName = 
+        array_key_exists('multiple', $attributes) && $attributes['multiple']
+        ? Str::finish($name, '[]')
+        : $name
+    ;
 ?>
 
 
 <div class="file-loading d-block">
-     {!! Form::file($name, $attributes) !!}
+     {!! Form::file($inputName, $attributes) !!}
 </div>
 @push('page_css')
 
