@@ -56,11 +56,13 @@ trait MediableController
             'collection' => 'required|string|max:50',
         ];
         if ($collection = $request->collection) {
+            $value = $request->{$collection};
+            
             $rules = array_merge(
                 $rules,
-                [
-                    "$collection" => 'nullable|file',
-                ]
+                is_array($value)
+                    ? ["$collection" => 'required|array', "$collection.*" => 'required|file']
+                    : ["$collection" => 'required|file']
             );
         }
         $this->validate($request, $rules, $messages = [], $attrs = trans("models/$modelName.fields"));
