@@ -72,6 +72,13 @@ trait MediableController
             return response()->noContent();
         }
 
+        // delete all medias in collection before add new
+        if (
+            method_exists($model, 'clearMediaCollectionBeforeAddMedias')
+            && in_array($collection, $model->clearMediaCollectionBeforeAddMedias())
+        ) {
+            $model->clearMediaCollection($collection);
+        }
         // store media
         $media = $model
             ->addMediaFromRequest($request->collection)
