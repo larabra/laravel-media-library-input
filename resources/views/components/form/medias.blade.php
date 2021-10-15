@@ -63,6 +63,8 @@
             ->toArray()
         ;
     }
+    $userMediaConfig = data_get($attributes, 'data-medias', []);
+    $mediaData = array_merge($mediaData, $userMediaConfig);
     $attributes['data-medias'] = e(json_encode($mediaData));
 
     $input_id = $attributes['id'] ?? 'medias_' . Str::random(10);
